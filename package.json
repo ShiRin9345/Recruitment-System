@@ -1,0 +1,15 @@
+{
+  "name": "hirement",
+  "version": "1.0.0",
+  "private": true,
+  "description": "招聘岗位管理系统",
+  "scripts": {
+    "dev": "pnpm --parallel --filter backend --filter frontend dev",
+    "build": "pnpm -r build",
+    "test": "pnpm --filter backend test",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
