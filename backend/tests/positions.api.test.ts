@@ -130,6 +130,33 @@ describe("positions API", () => {
     expect(listResponse.body.data[0].status).toBe("DRAFT");
   });
 
+  it("skips fully blank Excel template rows during import", async () => {
+    const XLSX = await import("xlsx");
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet([
+      { 岗位名称: "前端开发工程师", 岗位描述: "负责 Web 前端开发" },
+      { 岗位名称: "后端开发工程师", 岗位描述: "负责服务端接口开发" },
+      { 岗位名称: "", 岗位描述: "" },
+      { 岗位名称: "", 岗位描述: "" }
+    ]);
+    XLSX.utils.book_append_sheet(workbook, worksheet, "岗位");
+    const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "buffer" });
+
+    const response = await request(app)
+      .post("/webapi/positions/import")
+      .attach("file", buffer, "positions.xlsx")
+      .expect(200);
+
+    expect(response.body.data).toEqual({
+      imported: 2,
+      failed: 0,
+      errors: []
+    });
+
+    const listResponse = await request(app).get("/webapi/positions").expect(200);
+    expect(listResponse.body.data).toHaveLength(2);
+  });
+
   it("returns statistics grouped by status", async () => {
     await request(app)
       .post("/webapi/positions")

@@ -92,6 +92,10 @@ export class PositionService {
       const title = typeof row.title === "string" ? row.title.trim() : "";
       const description = typeof row.description === "string" ? row.description.trim() : "";
 
+      if (!title && !description) {
+        continue;
+      }
+
       if (!title) {
         errors.push({ rowNumber: row.rowNumber, message: "岗位名称不能为空" });
         continue;
