@@ -10,7 +10,9 @@ import { POSITION_STATUSES } from "../types/position.js";
 import { AppError } from "../utils/appError.js";
 import type { PositionRepository } from "./repository.js";
 
-const EDITABLE_STATUSES: PositionStatus[] = ["DRAFT", "REJECTED"];
+const EDITABLE_STATUSES: PositionStatus[] = ["DRAFT", "REJECTED", "PUBLISHED"];
+const DELETABLE_STATUSES: PositionStatus[] = ["DRAFT", "REJECTED"];
+const SUBMITTABLE_STATUSES: PositionStatus[] = ["DRAFT", "REJECTED"];
 
 export class PositionService {
   constructor(private readonly repository: PositionRepository) {}
@@ -39,13 +41,13 @@ export class PositionService {
 
   async delete(id: number): Promise<void> {
     const position = await this.getById(id);
-    this.ensureEditable(position);
+    this.ensureStatus(position, DELETABLE_STATUSES, "只有草稿或驳回岗位可以删除");
     await this.repository.delete(id);
   }
 
   async submit(id: number): Promise<Position> {
     const position = await this.getById(id);
-    this.ensureStatus(position, EDITABLE_STATUSES, "只有草稿或驳回岗位可以提交审批");
+    this.ensureStatus(position, SUBMITTABLE_STATUSES, "只有草稿或驳回岗位可以提交审批");
     return this.repository.setStatus(id, "PENDING", { approvalComment: null });
   }
 
@@ -129,7 +131,7 @@ export class PositionService {
   }
 
   private ensureEditable(position: Position) {
-    this.ensureStatus(position, EDITABLE_STATUSES, "只有草稿或驳回岗位可以编辑或删除");
+    this.ensureStatus(position, EDITABLE_STATUSES, "只有草稿、驳回或已发布岗位可以编辑");
   }
 
   private ensureStatus(position: Position, allowedStatuses: PositionStatus[], message: string) {

@@ -1,8 +1,8 @@
-import { NavLink, Navigate, Route, Routes } from "react-router-dom";
-import { BarChart3, BriefcaseBusiness, FileSpreadsheet, UserRoundCog } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Navigate, NavLink, Route, Routes } from "react-router-dom";
+import { BarChart3, BriefcaseBusiness, ClipboardCheck, FileSpreadsheet, UserRoundCog } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 import { useRole } from "@/lib/RoleContext";
 import { roleDescriptions, roleLabels } from "@/lib/positionMeta";
 import type { Role } from "@/types/position";
@@ -11,14 +11,25 @@ import { PositionListPage } from "@/pages/PositionListPage";
 import { StatsPage } from "@/pages/StatsPage";
 import { UploadPage } from "@/pages/UploadPage";
 
-const navItems = [
-  { to: "/positions", label: "岗位管理", icon: BriefcaseBusiness },
-  { to: "/import", label: "Excel 导入", icon: FileSpreadsheet },
-  { to: "/stats", label: "统计看板", icon: BarChart3 }
-];
+const navItemsByRole: Record<Role, Array<{ to: string; label: string; icon: typeof BriefcaseBusiness }>> = {
+  ADMIN: [
+    { to: "/positions", label: "岗位管理", icon: BriefcaseBusiness },
+    { to: "/import", label: "Excel 导入", icon: FileSpreadsheet },
+    { to: "/stats", label: "统计看板", icon: BarChart3 }
+  ],
+  APPROVER: [
+    { to: "/positions", label: "审批处理", icon: ClipboardCheck },
+    { to: "/stats", label: "统计看板", icon: BarChart3 }
+  ],
+  VISITOR: [
+    { to: "/positions", label: "岗位浏览", icon: BriefcaseBusiness },
+    { to: "/stats", label: "统计看板", icon: BarChart3 }
+  ]
+};
 
 export default function App() {
   const { role, setRole } = useRole();
+  const navItems = navItemsByRole[role];
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">
@@ -58,17 +69,21 @@ export default function App() {
         <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <nav className="flex flex-wrap gap-2">
             {navItems.map((item) => (
-              <Button key={item.to} asChild variant="secondary">
-                <NavLink
-                  to={item.to}
-                  className={({ isActive }) =>
-                    isActive ? "bg-slate-950 text-white hover:bg-slate-900" : undefined
-                  }
-                >
-                  <item.icon className="h-4 w-4" />
-                  {item.label}
-                </NavLink>
-              </Button>
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) =>
+                  cn(
+                    "inline-flex h-9 items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400",
+                    isActive
+                      ? "border-slate-950 bg-slate-950 text-white shadow-sm hover:bg-slate-800"
+                      : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-100"
+                  )
+                }
+              >
+                <item.icon className="h-4 w-4" />
+                {item.label}
+              </NavLink>
             ))}
           </nav>
           <p className="text-sm text-slate-500">{roleDescriptions[role]}</p>
@@ -78,9 +93,15 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/positions" replace />} />
           <Route path="/positions" element={<PositionListPage />} />
-          <Route path="/positions/new" element={<PositionFormPage mode="create" />} />
-          <Route path="/positions/:id/edit" element={<PositionFormPage mode="edit" />} />
-          <Route path="/import" element={<UploadPage />} />
+          <Route
+            path="/positions/new"
+            element={role === "ADMIN" ? <PositionFormPage mode="create" /> : <Navigate to="/positions" replace />}
+          />
+          <Route
+            path="/positions/:id/edit"
+            element={role === "ADMIN" ? <PositionFormPage mode="edit" /> : <Navigate to="/positions" replace />}
+          />
+          <Route path="/import" element={role === "ADMIN" ? <UploadPage /> : <Navigate to="/positions" replace />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="*" element={<Navigate to="/positions" replace />} />
         </Routes>

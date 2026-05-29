@@ -88,11 +88,16 @@ describe("positions API", () => {
 
     await request(app).post("/webapi/positions/1/submit").expect(200);
     await request(app).post("/webapi/positions/1/approve").expect(200);
+    await request(app)
+      .put("/webapi/positions/1")
+      .send({ title: "测试开发实习生（更新）", description: "已发布后补充岗位说明" })
+      .expect(200);
     await request(app).delete("/webapi/positions/1").expect(409);
     await request(app).post("/webapi/positions/1/close").expect(200);
 
     const detailResponse = await request(app).get("/webapi/positions/1").expect(200);
     expect(detailResponse.body.data.status).toBe("CLOSED");
+    expect(detailResponse.body.data.title).toBe("测试开发实习生（更新）");
   });
 
   it("imports Excel rows and returns row-level errors", async () => {
